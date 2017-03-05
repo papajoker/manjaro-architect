@@ -1,45 +1,46 @@
 #!/usr/bin/bash
 # normal menu tree
 
-main_menu
---prepare               func_check
-----keymap      workfunction
-----devices     workfunction
-----partition   workfunction
-----luks        workfunction
-----lvm         workfunction
-----mount
---install_base          func_check (optional)
-----config_mirrors          workfunction
-----refresh_keys            workfunction
-----install_base            workfunction
-----bootloader              workfunction
---config_base          func_check
-----fstab
-----hostname
-----locale
-----time_n_date
-----root_pw
-----create_user
-----mkinitcpio
---install_environment          func_check
-----DE_WM
-------manjaro_pkg               workfunction
-------manjaro_git
-------unconfigured
---------xorg
---------de_wm
---------dm
---------nm
---------multimedia
-----------acc
-----------alsa_pulse
-----------codecs
-----------custom_pkgs
-----video_driver                workfunction_videod
-----xkbmap                      workfunction_x
---edit_config                   func_check
-----file1
-----file2
-----file3
---advanced_system_tweaks          func_check
+--main_menu
+----prepare                   ; func_begin ; fn_end
+------keymap              ; workfunction
+------devices             ; workfunction
+------partition           ; workfunction
+------luks                ; workfunction
+------lvm                 ; workfunction
+------mount
+----install_base                  ; func_check ; fn_end
+------config_mirrors          ; workfunction
+------refresh_keys            ; workfunction
+------instal_base             ; workfunction
+------bootloader              ; workfunction
+------done                    ; mnu_return
+----config_base                   ; func_check
+------fstab
+------hostname
+------locale
+------time_n_date
+------root_pw
+------create_user
+------mkinitcpio
+----install_environment           ; func_check
+------DE_WM
+--------manjaro_pkg            ; workfunction
+--------manjaro_git
+--------unconfigured
+----------xorg
+----------de_wm
+----------dm
+----------nm
+----------multimedia
+------------acc
+------------alsa_pulse
+------------codecs
+------------custom_pkgs
+------video_driver                ; workfunction_videod
+------xkbmap                      ; workfunction_x
+----edit_config                       ; func_begin ; fn_end
+------file1
+------file2
+------file3
+----advanced_system_tweaks            ; func_begin

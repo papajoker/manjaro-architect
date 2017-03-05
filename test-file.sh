@@ -100,12 +100,12 @@ format_menutool() {
     done
 }
 
-declare -g -A MENUGLOBAL
+declare MENUGLOBAL=''
 #parse file data/*.menu
 load_options_menutool() {
     local menukey="${1:-install_environment}"
-    MENUGLOBAL[key]="$menukey"
-    declare -a menuglobal_items=() menuglobal_fn=()
+    debug "\nfind menu: $menukey"
+    declare -a menuglobal_items=() menuglobal_fn=() i j
     local localfilename="${2:-default}"
     local tmp=() level='' levelsub='' reg loop curentitem i j
     local IFS=$'\n'
@@ -114,42 +114,53 @@ load_options_menutool() {
         if [[ $line =~ $reg ]]; then
             level=$(echo "$line" | grep -Eo "\-{1,}")
             levelsub="$level--";
-            echo "key:$menukey"
-            echo "$line : find subs: ${levelsub}XX"
+            debug "key:$menukey find :)"
+            #echo "$line : find subs: ${levelsub}XX"
             continue
         fi
         if [ -n "$levelsub" ]; then
             #echo  "$line "
             reg="^$levelsub[a-zA-Z_]"
             if [[ $line =~ $reg ]]; then
-                echo "ok: $line"
+                debug "ok: $line"
                 line=( "${line//-}" )
-                tmp="$(echo "$line"|awk '{print $2}')"
+                tmp="$(echo "$line"|awk -F';' '{print $2}')"
                 tmp="${tmp:-returnOK}"
                 curentitem="${line//-}"
-                menuglobal_items+=( $(echo "$line"|awk '{print $1}') )
-                menuglobal_fn+=( "$tmp" )
+                curentitem="$(echo "$line"|awk -F';' '{print $1}')"
+                curentitem=${curentitem//[[:space:]]/}
+                debug "curitem: $curentitem"
+                menuglobal_items+=( "$curentitem" )
+                menuglobal_fn+=( "${tmp//[[:space:]]/}" )
             else
                 reg="^$levelsub--[a-zA-Z_]"
-                [[ $line =~ $reg ]] && {
+                if [[ $line =~ $reg ]]; then
                     # this item load a sub menu
-                    echo "sous mnu: de $line = $curentitem"
-                    menuglobal_fn[$((${#menuglobal_fn[@]}-1))]="show menu $curentitem"
+                    #echo "sous mnu: de $line = $curentitem"
+                    menuglobal_fn[-1]="show_menu $curentitem"
+                    i=$(( "${#menuglobal_items[@]}"-1 ))
+                    tmp="${menuglobal_items[-1]}"
+                    [[ "${tmp: -1}" != ">" ]] && menuglobal_items[-1]="${tmp} |>"
                     continue
-                }
+                fi
                 reg="^$level[a-zA-Z_]"
                 [[ $line =~ $reg ]] && break
             fi
         fi
     done
-    MENUGLOBAL[items]="${menuglobal_items[@]}"
-    MENUGLOBAL[fn]="${menuglobal_fn[@]}"
-    echo  "-------------"
+
+    MENUGLOBAL=''
+    for i in "${menuglobal_fn[@]}"; do
+        MENUGLOBAL="${MENUGLOBAL}${i};"
+    done
+    debug "functions: ${MENUGLOBAL}"
+    debug  "-------------"
     for i in "${!menuglobal_items[@]}"; do
         (( j=i+1 ))
-        echo "$j  \"${menuglobal_items[$i]}\" \"${menuglobal_fn[$i]}\" "
+        debug "$j  \"${menuglobal_items[$i]}\" \"${menuglobal_fn[$i]}\" "
+        echo "$j"
+        echo "${menuglobal_items[$i]}"
     done
- 
 }
 
 DIALOG() {
@@ -157,44 +168,76 @@ DIALOG() {
     dialog --keep-tite --backtitle "$VERSION - $SYSTEM ($ARCHI)" --column-separator "|" --title "$@"
 }
 
+debug(){
+    echo -e "$@" >>"./.log"
+}
+
+mnu_return(){
+    return 9   # return mnu -1 (done)
+}
+returnOK(){
+    return 0    # function is ok
+}
+workfunction(){
+    pacman -Syu # generate a error for test
+}
+
 
 ####################################################
 
-main_menu()
+show_menu()
 {
-    local cmd id options menus choice loopmenu keymenu
-    keymenu="$1:-main_menu"
-    cmd=(DIALOG "$_keymenu" --menu "$_keymenu_present" 0 0 )
+    local cmd id options menus choice keymenu functions errcode highlight=1 nbitems=1
+    keymenu="${1:-main_menu}"
 
-    load_options_menutool "$_keymenu"
-    #options=load_options_menutool "$_keymenu"
-
+    load_options_menutool "${keymenu}">'/tmp/mnu'
     # a function to remove  the third column
-    mapfile -t menus <<< "$(format_menutool "${options[@]}" )"
+    mapfile -t menus < '/tmp/mnu'
     declare -p menus &>/dev/null
 
-    (( id="${#options[@]}" /3 ))
-    cmd+=( $id ) # number of lines
-exit
-    loopmenu=1
+    debug "functions: ${MENUGLOBAL}"
+    IFS=';' read -a functions <<<"${MENUGLOBAL}"
+    debug "functions: ${functions[@]}"
+
+    # call function_begin
+
+    (( nbitems="${#menus[@]}" /2 ))
+    debug "number of items: $id :menu:${menus[@]}"
+    
+
     while ((1)); do
+        cmd=(DIALOG "$keymenu $_keymenu_title" --default-item ${highlight} --menu "$_keymenu_body" 0 0 )
+        cmd+=( $nbitems ) # number of lines
 
         # run dialog options
         choice=$("${cmd[@]}" "${menus[@]}" 2>&1 >/dev/tty)
         choice="${choice:-0}"
 
         case "$choice" in
-            0) return 0 ;;                # btn cancel
-            *)  echo "$choice"            # debug
-                id=$(( (choice*3)-1 ))
-                fn="${options[$id]}"      # find attach working function to array with  3 column
-                echo $fn                  # debug
-                $fn # run working(or submenu) function
+            0)  return 0 ;;                # btn cancel
+            *)  debug "\nchoice: $choice"     # debug
+                debug "functions: ${functions[@]}"     # debug
+                [ -z "$choice" ] && continue
+                id=$(( "$choice"-1 ))
+                fn="${functions[$id]}"      # find attach working function to array with  3 column
+                #echo ::${fn}::                  # debug
+                debug "\ncall function: $fn"
+                eval "${fn}" #|| return $? # run working(or submenu) function
+                errcode=$?
+                debug "errcode: $errcode"
+                if ((errcode!=0)); then
+                    break
+                else
+                    ((++choice))
+                    highlight=$choice
+                fi
         esac
 
     done
+    # call function_end
 }
 
+[ -f "./.log" ] && echo "">"./.log"
 set_lang            # auto load translates
 get_params "$@"     # read params
 
@@ -202,4 +245,4 @@ if [[ "${PARAMS[advanced]}" == '0' ]]; then
     menu_choice
 fi
 
-main_menu 
+show_menu "main_menu"
