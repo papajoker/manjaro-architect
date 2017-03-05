@@ -1,21 +1,21 @@
 #!/usr/bin/bash
 # normal menu tree
 
---main_menu
-----prepare                   ; func_begin ; fn_end
+--MM
+----Prep                   ; func_begin ; fn_end
 ------keymap              ; workfunction
 ------devices             ; workfunction
-------partition           ; workfunction
+------PartTool           ; workfunction
 ------luks                ; workfunction
 ------lvm                 ; workfunction
 ------mount
-----install_base                  ; func_check ; fn_end
-------config_mirrors          ; workfunction
+----InstBs                  ; func_check ; fn_end
+------Mirrorlist          ; workfunction
 ------refresh_keys            ; workfunction
 ------instal_base             ; workfunction
 ------bootloader              ; workfunction
 ------done                    ; mnu_return
-----config_base                   ; func_check
+----ConfBse                   ; func_check
 ------fstab
 ------hostname
 ------locale
@@ -32,7 +32,7 @@
 ----------de_wm
 ----------dm
 ----------nm
-----------multimedia
+----------InstMult
 ------------acc
 ------------alsa_pulse
 ------------codecs

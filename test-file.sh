@@ -81,6 +81,18 @@ menu_choice() {
 
 ####################################################
 
+#pick in .transfile
+# 2 params : keymenu , content
+tt() {
+    local str=''
+    str="_${1}Menu${2}";
+    str="${!str}";
+    if [ -z "$str" ]; then
+        [ "$2" != "Body" ] && str="$1" || str=""
+    fi
+    echo "$str"
+}
+
 # reset numbers after delete/insert
 renumber_menutool() {
     for i in "${!options[@]}"; do
@@ -130,7 +142,7 @@ load_options_menutool() {
                 curentitem="$(echo "$line"|awk -F';' '{print $1}')"
                 curentitem=${curentitem//[[:space:]]/}
                 debug "curitem: $curentitem"
-                menuglobal_items+=( "$curentitem" )
+                menuglobal_items+=( "$(tt $curentitem Title)" )
                 menuglobal_fn+=( "${tmp//[[:space:]]/}" )
             else
                 reg="^$levelsub--[a-zA-Z_]"
@@ -188,7 +200,7 @@ workfunction(){
 show_menu()
 {
     local cmd id options menus choice keymenu functions errcode highlight=1 nbitems=1
-    keymenu="${1:-main_menu}"
+    keymenu="${1:-MM}"
 
     load_options_menutool "${keymenu}">'/tmp/mnu'
     # a function to remove  the third column
@@ -203,10 +215,9 @@ show_menu()
 
     (( nbitems="${#menus[@]}" /2 ))
     debug "number of items: $id :menu:${menus[@]}"
-    
 
     while ((1)); do
-        cmd=(DIALOG "$keymenu $_keymenu_title" --default-item ${highlight} --menu "$_keymenu_body" 0 0 )
+        cmd=(DIALOG "$(tt ${keymenu} Title)" --default-item ${highlight} --menu "$(tt ${keymenu} Body)" 0 0 )
         cmd+=( $nbitems ) # number of lines
 
         # run dialog options
@@ -245,4 +256,4 @@ if [[ "${PARAMS[advanced]}" == '0' ]]; then
     menu_choice
 fi
 
-show_menu "main_menu"
+show_menu "MM"
