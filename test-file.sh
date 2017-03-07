@@ -316,7 +316,7 @@ show_menu()
     done
     # call function check end in layout
     if [ -n "${fend}" ]; then
-        "${fend} $keymenu" || return 100
+        ${fend} $keymenu || return 100
     fi
 }
 
