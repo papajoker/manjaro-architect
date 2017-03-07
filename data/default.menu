@@ -9,23 +9,23 @@
 ------luks                ; workfunction
 ------lvm                 ; workfunction
 ------mount
-----InstBs                  ; func_check ; fn_end
-------Mirrorlist          ; workfunction
-------refresh_keys            ; workfunction
-------instal_base             ; workfunction
+----InstBs                   ; func_check ; fn_end
+------Mirrorlisting          ; workfunction
+------refresh keys            ; workfunction
+------InstBse             ; workfunction
 ------bootloader              ; workfunction
 ------done                    ; mnu_return
 ----ConfBse                   ; func_check
 ------fstab
 ------hostname
 ------locale
-------time_n_date
+------time and date
 ------root_pw
-------create_user
+------create user
 ------mkinitcpio
 ----install_environment           ; func_check
 ------DE_WM
---------manjaro_pkg            ; workfunction
+--------InstCom            ; workfunction
 --------manjaro_git
 --------unconfigured
 ----------xorg
@@ -34,13 +34,13 @@
 ----------nm
 ----------InstMult
 ------------acc
-------------alsa_pulse
+------------alsa pulse
 ------------codecs
-------------custom_pkgs
+------------custom packages
 ------video_driver                ; workfunction_videod
 ------xkbmap                      ; workfunction_x
-----edit_config                       ; func_begin ; fn_end
-------file1
-------file2
+----edit_config                       ; check_menu_edit_config_begin
+------init conf
+------pacman.conf                      ;  nano /etc/pacman.conf
 ------file3
 ----advanced_system_tweaks            ; func_begin
