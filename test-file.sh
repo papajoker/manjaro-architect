@@ -103,8 +103,8 @@ tt() {
 
 # reset numbers after delete/insert, not used
 renumber_menutool() {
-    for i in "${!options[@]}"; do
-        ((i % 3==0)) && { ((j=j+1)); options[$i]=$j; }
+    for i in "${!menus[@]}"; do
+        ((i % 2==0)) && { ((j=j+1)); menus[$i]=$j; }
         ((i=i+1))
     done
 }
@@ -251,6 +251,14 @@ check_menu_edit_config_begin(){
     else
         functions[0]="nano /etc/rc.conf"
     fi
+
+    # delete item 2 for exemple
+    #unset menus[4]; unset menus[3]; unset functions[1]
+
+    #TODO
+    # menu_item_change ( ID='' , callfunction='' )
+    # menu_item_delete ( ID )
+    # menu_item_insert ( ID_after='', caption, callfunction )
 }
 func_begin() { return 0; } # test in layout for exemple test if base installed
 func_check() { return 0; } # test in layout
@@ -276,10 +284,11 @@ show_menu()
     # call function chech  begin
     if [ -n "${MENUPARAMS[begin]}" ]; then
         ${MENUPARAMS[begin]} $keymenu || return 99
+        renumber_menutool # if insert or delete item
     fi
     if [ -n "${MENUPARAMS[end]}" ]; then
         fend="${MENUPARAMS[end]}"
-    fi    
+    fi
 
     (( nbitems="${#menus[@]}" /2 ))
     debug "number of items: $id :menu:${menus[@]}"
