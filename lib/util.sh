@@ -79,17 +79,20 @@ menu_choice() {
 #  working tests menus functions
 ####################################################
 
-mnu_return(){
-    return 9   # return mnu -1 (done)
-}
-returnOK(){
-    return 0    # function is ok
-}
-workfunction(){
-    pacman -Syu # generate error for test
+mnu_return(){ return "${1:-98}"; }   # return mnu -1 (done)
+returnOK(){ return 0; }    # function is ok
+returnNO(){ return 1; }
+workfunction(){ pacman -Syu; } # generate error for test
+
+
+mount_disk_and_root(){ # simulate
+    INSTALL[mounted]=1
+    DIALOG " OK " --msgbox "\n chroot is now ok :) \n" 0 0
+    return 0
 }
 
-#tests
+# tests -------------------------------------
+
 #change item and function from param
 check_menu_edit_config_begin(){
     if [[ "${ARGS[init]}" == "systemd" ]]; then
@@ -107,6 +110,13 @@ check_menu_edit_config_begin(){
     menu_item_insert "" "last item" "nano test_add"
 
     return 0
+}
+
+check_menu_is_mounted(){
+    if [[ "${INSTALL[mounted]}" != 1 ]]; then
+        DIALOG " error " --msgbox "\n make mount in pre-install before\n" 0 0
+        return "${1:-98}"
+    fi
 }
 
 func_begin() { return 0; } # test in layout for exemple test if base installed

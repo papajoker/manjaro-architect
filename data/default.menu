@@ -2,20 +2,21 @@
 # normal menu tree
 
 --MM
-----Prep                       ; func_begin ; func_end
+----Prep                       ; func_begin ; check_menu_is_mounted
 ------keymap              ; workfunction
 ------devices             ; workfunction
 ------PartTool            ; workfunction
 ------luks                ; workfunction
 ------lvm                 ; workfunction
-------mount
-----InstBs                   ; func_begin ; func_end
+------mount               ; mount_disk_and_root
+------end test block            ; check_menu_is_mounted 98
+----InstBs                   ; check_menu_is_mounted ; func_end
 ------Mirrorlisting
 ------refresh keys
 ------InstBse
 ------bootloader
 ------done                ; mnu_return
-----ConfBse                   ; func_begin
+----ConfBse                   ; check_menu_is_mounted
 ------fstab
 ------hostname
 ------locale
@@ -23,7 +24,7 @@
 ------root_pw
 ------create user
 ------mkinitcpio
-----install_environment         ; func_begin
+----install_environment         ; check_menu_is_mounted
 ------DE_WM
 --------InstCom
 --------manjaro_git

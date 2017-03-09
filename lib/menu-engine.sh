@@ -242,7 +242,7 @@ show_menu()
         choice="${choice:-0}"
 
         case "$choice" in
-            0)  return 0 ;;                # btn cancel
+            0)  return ;;                # btn cancel
             *)  debug "\nchoice: $choice"               # debug
                 [ -z "$choice" ] && continue
                 id=$(( "$choice"-1 ))
@@ -252,17 +252,24 @@ show_menu()
                 ${fn}
                 errcode=$?
                 debug "errcode: $errcode"
-                if ((errcode!=0)); then
-                    break
-                else
-                    ((++choice))        # go to next item if ok
-                    highlight=$choice
-                fi
+                case "$errcode" in
+                    99) :   # check_before in sub_menu
+                        ;;
+                    98) :    # check_end in sub menu
+                        ;;
+                    0) :
+                        ((++choice))        # go to next item if ok
+                        highlight=$choice
+                        ;;
+                    *) :    # other errors
+                        break
+                        ;;
+                esac
         esac
 
     done
     # call function check end in layout
     if [ -n "${fend}" ]; then
-        ${fend} $keymenu || return 100
+        ${fend} $keymenu || return 98
     fi
 }
