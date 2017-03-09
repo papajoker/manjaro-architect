@@ -1,36 +1,39 @@
 # !/bin/bash
 #
 
-ANSWER='/tmp/tmp'
+ANSWER='/tmp/ma-ANSWER'
 
 DIALOG() {
     dialog --backtitle "$VERSION - $SYSTEM ($ARCHI)" --column-separator "|" --title "$@"
 }
 
 debug(){
-    ((${PARAMS[debug]})) && echo -e "$@" >>"../.log"
+    ((${ARGS[debug]})) && echo -e "$@" >>"$file_log"
 }
 
-# read console args , set in array PARAMS global var
-get_params() {
+# read console args , set in array ARGS global var
+get_ARGS() {
     declare key param
     while [ -n "$1" ]; do
         param="$1"
         case "${param}" in
             --advanced|-a)
-                PARAMS[advanced]=1
+                ARGS[advanced]=1
                 ;;
             --debug|-d)
-                PARAMS[debug]=1
-                ;;                
+                ARGS[debug]=1
+                ;; 
+            --remove|-r)
+                ARGS[remove]=1
+                ;;                               
             --init=*)
                 key="init"
-                PARAMS[$key]="${param##--$key=}"
-                [[ "${PARAMS[$key]:0:1}" == '"' ]] && PARAMS[$key]="${PARAMS[$key]/\"/}" # remove quotes
-                PARAMS[$key]="${PARAMS[$key],,}" # lowercase
+                ARGS[$key]="${param##--$key=}"
+                [[ "${ARGS[$key]:0:1}" == '"' ]] && ARGS[$key]="${ARGS[$key]/\"/}" # remove quotes
+                ARGS[$key]="${ARGS[$key],,}" # lowercase
                 ;;
             --help|-h)
-                echo "usage [-d|--debug] [ --init=openrc ] [-a|--advanced] "
+                echo "usage [-d|--debug] [-r|--remove] [ --init=openrc ] [-a|--advanced] "
                 exit 0
                 ;;                
             -*)
@@ -39,6 +42,7 @@ get_params() {
         esac
         shift
     done
+    #declare -g -r ARGS
 }
 
 # auto load translate
@@ -65,9 +69,9 @@ menu_choice() {
       "regular" "" on \
       "advanced" "" off 2>${ANSWER}
     if [[ "$(<${ANSWER})" == 'regular' ]]; then
-        PARAMS[advanced]=0
+        ARGS[advanced]=0
     else
-        PARAMS[advanced]=1
+        ARGS[advanced]=1
     fi
 }
 
@@ -85,25 +89,25 @@ workfunction(){
     pacman -Syu # generate error for test
 }
 
-#test
+#tests
 #change item and function from param
 check_menu_edit_config_begin(){
-    menus[1]="${PARAMS[init]} config"    
-    if [[ "${PARAMS[init]}" == "systemd" ]]; then
-        functions[0]="nano /etc/${PARAMS[init]}/system.conf"
+    if [[ "${ARGS[init]}" == "systemd" ]]; then
+        menu_item_change "init config" "systemd configuration" "nano /etc/${ARGS[init]}/system.conf"
     else
-        functions[0]="nano /etc/rc.conf"
+        menu_item_change "init config"  "openrc configuration" "nano /etc/rc.conf"
     fi
 
-    # delete item 2 for exemple
-    #unset menus[4]; unset menus[3]; unset functions[1]
+    if ((ARGS[remove])); then
+        menu_item_change "pacman.conf"  # no args = remove
+    fi
 
-    #TODO
-    # menu_item_change ( ID='' , callfunction='' )
-    # menu_item_delete ( ID )
-    # menu_item_insert ( ID_after='', caption, callfunction )
+    # tests
+    menu_item_insert "pacman.conf" "test insert" "nano test_insert"
+    menu_item_insert "" "last item" "nano test_add"
+
+    return 0
 }
 
 func_begin() { return 0; } # test in layout for exemple test if base installed
-func_check() { return 0; } # test in layout
-fn_end() { return 0; }     # test in layout
+func_end() { return 0; }   # test in layout

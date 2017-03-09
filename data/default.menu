@@ -2,20 +2,20 @@
 # normal menu tree
 
 --MM
-----Prep                   ; func_begin ; fn_end
+----Prep                       ; func_begin ; func_end
 ------keymap              ; workfunction
 ------devices             ; workfunction
-------PartTool           ; workfunction
+------PartTool            ; workfunction
 ------luks                ; workfunction
 ------lvm                 ; workfunction
 ------mount
-----InstBs                   ; func_check ; fn_end
-------Mirrorlisting          ; workfunction
-------refresh keys            ; workfunction
-------InstBse             ; workfunction
-------bootloader              ; workfunction
-------done                    ; mnu_return
-----ConfBse                   ; func_check
+----InstBs                   ; func_begin ; func_end
+------Mirrorlisting
+------refresh keys
+------InstBse
+------bootloader
+------done                ; mnu_return
+----ConfBse                   ; func_begin
 ------fstab
 ------hostname
 ------locale
@@ -23,9 +23,9 @@
 ------root_pw
 ------create user
 ------mkinitcpio
-----install_environment           ; func_check
+----install_environment         ; func_begin
 ------DE_WM
---------InstCom            ; workfunction
+--------InstCom
 --------manjaro_git
 --------unconfigured
 ----------xorg
@@ -37,10 +37,10 @@
 ------------alsa pulse
 ------------codecs
 ------------custom packages
-------video_driver                ; workfunction_videod
-------xkbmap                      ; workfunction_x
+------video_driver            ; workfunction_videod
+------xkbmap                  ; workfunction_x
 ----edit_config                       ; check_menu_edit_config_begin
-------init conf
-------pacman.conf                      ;  nano /etc/pacman.conf
-------file3
-----advanced_system_tweaks            ; func_begin
+------init config
+------pacman.conf             ;  nano /etc/pacman.conf
+------bash                    ; nano /tmp/bashrc
+----advanced_system_tweaks    ; workfunction
