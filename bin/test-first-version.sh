@@ -5,8 +5,8 @@
 
 
 version='dev test'
-LIBDIR='./lib'
-DATADIR='./data'
+LIBDIR='../lib'
+DATADIR='../data'
 ARCHI=$(uname -m)
 ANSWER='/tmp/tmp'
 
