@@ -15,7 +15,7 @@
 ------refresh keys
 ------InstBse
 ------bootloader
-------done                ; mnu_return
+------done                ; mnu_return 97
 ----ConfBse                   ; check_menu_is_mounted
 ------fstab
 ------hostname
