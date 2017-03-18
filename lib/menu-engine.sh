@@ -106,6 +106,35 @@ menu_item_insert () {
 }
 
 ####################################################
+# #convert array $options to dialog datas
+# return string
+####################################################
+# menu_convert_datas(  typemenu='number' )
+menu_convert_datas() {
+  local i str
+  datas=()
+  case "$1" in
+    list) # convert
+      for i in "${!options[@]}"; do
+        ((i % 2!=0)) && {
+          str="${options[$i]}"
+          #TODO decouper 1er mot , et reste
+          datas+=( "${str%% *}" "${str#* }" )
+        }
+      done
+      ;;
+    *) datas=( "${options[@]}" );
+  esac
+
+  [[ "$1" == "list" ]] && {
+    printf "%s \n" "${options[@]}"
+    echo "---------------"
+    printf "%s \n" "${datas[@]}"
+    #exit
+  }
+}
+
+####################################################
 # #parse file data/*.menu
 # return array
 ####################################################
@@ -146,7 +175,7 @@ load_options_menutool() {
                 curentitem="${line[0]}"
                 
                 debug "curitem: $curentitem , function: ${line[1]} "
-                options+=( 0 "$(tt $curentitem Title)" )
+                options+=( 0 "$(tt ${curentitem%%.*} Title)" )
                 # attach function to item
                 tmp="${line[1]}"
                 tmp="${tmp:-returnOK}" # for this test
@@ -168,6 +197,8 @@ load_options_menutool() {
     done
 }
 
+
+
 ####################################################
 # load one menu from template and show dialog
 ####################################################
@@ -177,11 +208,22 @@ show_menu()
 {
     local cmd id menus choice errcode highlight=1 nbitems=1
     local fend fbegin floop            # check functions
-    local options=() functions=()   # menu datas
+    local options=() functions=() datas=()  # menu datas
     local keymenu="${1:-MM}"
+    local typemenu="${2:-number}"
+
+    local ext="${keymenu##*.}"
+    local keymenuTxt="${keymenu%%.*}"
+
+    case "$ext" in
+      lst) typemenu="list" ;;
+      *)   typemenu="number" ;
+    esac
+    unset ext
 
     # reset numbers after delete/insert item
     renumber_menutool() {
+        [[ "$typemenu" != "number" ]] && return 0
         local i=0 j=0
         for i in "${!options[@]}"; do
             ((i % 2==0)) && { ((j=j+1)); options[$i]=$j; }
@@ -204,12 +246,13 @@ show_menu()
     ((nbitems>20)) && nbitems=20 # show max 20 items
 
     while ((1)); do
-        cmd=(dialog_menu "$(tt ${keymenu} Title)" --default-item ${highlight} --menu "$(tt ${keymenu} Body)" 0 0 )
+        cmd=(dialog_menu "$(tt ${keymenuTxt} Title)" --default-item ${highlight} --menu "$(tt ${keymenuTxt} Body)" 0 0 )
         cmd+=( $nbitems ) # add number of items
 
         # run dialog options
-        choice=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)
-        # ?choice=eval "${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty
+        menu_convert_datas "$typemenu"
+        choice=$("${cmd[@]}" "${datas[@]}" 2>&1 >/dev/tty)
+        # ?choice=eval "${cmd[@]}" "${datas}" 2>&1 >/dev/tty
         choice="${choice:-0}"
 
         case "$choice" in
@@ -246,6 +289,7 @@ show_menu()
         # call function chech  loop
         if [ -n "${floop}" ]; then
             $floop "$keymenu" || return 98
+            local datas=menu_convert_datas "$typemenu"
             renumber_menutool # if insert or delete item
         fi
 
