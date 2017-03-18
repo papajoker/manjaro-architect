@@ -4,9 +4,10 @@
 --MM
 ----Prep                       ; func_begin ; check_menu_is_mounted
 ------keymap.lst              
---------fr french francais
---------en english
-------devices             ; workfunction
+--------fr french francais    ; func_exit 1
+--------en english            ; func_exit 2
+--------de dutch              ; func_exit 3
+------devices             ; func_exit devices
 ------PartTool            ; workfunction
 ------luks                ; workfunction
 ------lvm                 ; workfunction

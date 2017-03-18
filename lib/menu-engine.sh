@@ -55,18 +55,33 @@ menu_split_line(){
     trim_line "${str//-}"
 }
 
-# find item in dialog array by key
+# find item in numbered dialog array by regex
 # menu_item_find ( key='' )
 # return line number, 255 not found
 menu_item_find() {
     [ -z "$1" ] && return 1
-    local id=0 i=0
+    local i=0
     for i in "${!options[@]}"; do
-        if [[ "${options[$i]}" == "$1" ]]; then
-            (( id= (i-1) /2 ))
-            echo "$id" && return 0
+        if [[ "${options[$i]}" =~ /"$1"/ ]]; then
+            (( i= (i-1) /2 ))
+            echo "$i" && return 0
         fi
     done
+    return 1
+}
+
+# find item in list dialog by text
+menu_item_find_list() {
+    [ -z "$1" ] && return 1
+    local i=0
+    for i in "${!options[@]}"; do
+        if [[ "${options[$i]}" =~ ^"$1"  ]]; then
+            (( i= i/2 ))
+            debug "menu_item_find_list: trouvé :$i"
+            echo "$i" && return 0
+        fi
+    done
+    debug "menu_item_find_list: non trouvé :$1 dans ${options[@]}"
     return 1
 }
 
@@ -125,13 +140,6 @@ menu_convert_datas() {
       ;;
     *) datas=( "${options[@]}" );
   esac
-
-  [[ "$1" == "list" ]] && {
-    printf "%s \n" "${options[@]}"
-    echo "---------------"
-    printf "%s \n" "${datas[@]}"
-    #exit
-  }
 }
 
 ####################################################
@@ -251,19 +259,29 @@ show_menu()
 
         # run dialog options
         menu_convert_datas "$typemenu"
-        choice=$("${cmd[@]}" "${datas[@]}" 2>&1 >/dev/tty)
+        choice=$("${cmd[@]}" "${datas[@]}" 3>&1 1>&2 2>&3)
         # ?choice=eval "${cmd[@]}" "${datas}" 2>&1 >/dev/tty
         choice="${choice:-0}"
 
         case "$choice" in
             0)  return ;;                # btn cancel
-            *)  debug "\nchoice: $choice"               # debug
+            *)  
+                debug "\nchoice: $choice"               # debug
                 [ -z "$choice" ] && continue
-                ((--choice))
-                fn="${functions[$choice]}"      # find attach working function to array with  3 column
+
+                if [[ "$typemenu" == "number" ]]; then
+                    ((id=--choice))
+                else
+                    echo "choice: $choice"
+                    id=$(menu_item_find_list "$choice")
+                    echo "id: $id"
+                    choice="${datas[((id*2))]}"
+                    echo "choice: $choice"
+                fi
+                fn="${functions[$id]}"      # find attach working function to array with  3 column
                 debug "call function: $fn"
-                # or use eval for eval ${fn} if variables $var ? nor secure ?
-                ${fn}
+                # or use eval for eval ${fn} if variables $var ? not secure ?
+                ${fn} "$choice"
                 errcode=$?
                 debug "errcode: $errcode"
                 case "$errcode" in
@@ -275,8 +293,7 @@ show_menu()
                         return 0
                         ;;
                     0) :
-                        ((++choice))        # go to next item if ok
-                        highlight=$choice
+                        ((highlight=id+2))  # go to next item if ok
                         ;;
                     *) :    # other errors
                         #(( ($choice+1)*2 ))

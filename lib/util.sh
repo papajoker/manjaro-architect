@@ -121,3 +121,8 @@ check_menu_is_mounted(){
 
 func_begin() { return 0; } # test in layout for exemple test if base installed
 func_end() { return 0; }   # test in layout
+
+func_exit() {   # test
+    echo "func_exit $@"
+    exit 0
+}
