@@ -126,3 +126,30 @@ func_exit() {   # test
     echo "func_exit $@"
     exit 0
 }
+
+# ---------- softwares
+
+check_soft_list(){
+    local i=0 item="" str=""
+    for i in "${!options[@]}"; do
+        if ((i % 2!=0)); then
+            item="${options[$i]}"
+            if [[ "${item:0:1}" != "+" ]]; then
+                debug "check_soft_list: $item = ${str##* }"
+                if [[ $(grep "^${str##* }$" -c "${checklist_file}") > 0 ]]; then
+                    options[$i]="+${item}"
+                fi
+            fi
+        else
+            str="${functions[(($i/2))]}"
+        fi
+    done
+    return 0
+}
+
+add_list(){
+    debug "add in list: $@"
+    echo "$1" >> "${checklist_file}"
+    sleep 0.1
+    sort -u "${checklist_file}" --output="${checklist_file}"
+}

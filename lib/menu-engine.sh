@@ -2,10 +2,13 @@
 #
 # load layout and show dialogs
 
+checklist_file="/tmp/.checklist"
+checklist_file="../.checklist"
+
 
 dialog_menu() {
     # add : --keep-tite to aif version
-    dialog --keep-tite --backtitle "$VERSION - $SYSTEM ($ARCHI)" --column-separator "|" --title "$@"
+    dialog --backtitle "$VERSION - $SYSTEM ($ARCHI)" --column-separator "|" --title "$@"
 }
 
 #pick in .transfile
@@ -126,7 +129,7 @@ menu_item_insert () {
 ####################################################
 # menu_convert_datas(  typemenu='number' )
 menu_convert_datas() {
-  local i str
+  local i=0 j=0 str='' onoff=''
   datas=()
   case "$1" in
     list) # convert
@@ -138,6 +141,21 @@ menu_convert_datas() {
         }
       done
       ;;
+    checklist) # convert
+      for i in "${!options[@]}"; do
+        ((i % 2!=0)) && {
+          ((j++))
+          str="${options[$i]}"
+          if [[ "${str:0:1}" == "+" ]]; then
+            str="${str:1}"
+            onoff='on'
+          else
+            onoff='off'  
+          fi
+          datas+=( "$j" "${str}" "$onoff" )
+        }
+      done
+      ;;      
     *) datas=( "${options[@]}" );
   esac
 }
@@ -174,7 +192,7 @@ load_options_menutool() {
             continue
         fi
         if [ -n "$levelsub" ]; then
-            reg="^$levelsub[a-zA-Z_]"
+            reg="^$levelsub[a-zA-Z+_]"
             if [[ $line =~ $reg ]]; then
                 # menu item find
                 line=$(menu_split_line "$line")
@@ -189,7 +207,7 @@ load_options_menutool() {
                 tmp="${tmp:-returnOK}" # for this test
                 functions+=( "${tmp}" )
             else
-                reg="^$levelsub--[a-zA-Z_]"
+                reg="^$levelsub--[a-zA-Z+_]"
                 if [[ $line =~ $reg ]]; then
                     # prev-item load a sub menu
                     functions[-1]="show_menu $curentitem"
@@ -198,7 +216,7 @@ load_options_menutool() {
                     [[ "${tmp: -1}" != ">" ]] && options[-1]="${tmp} |>"
                     continue
                 fi
-                reg="^$level[a-zA-Z_]"
+                reg="^$level[a-zA-Z+_]"
                 [[ $line =~ $reg ]] && break
             fi
         fi
@@ -214,18 +232,19 @@ load_options_menutool() {
 
 show_menu()
 {
-    local cmd id menus choice errcode highlight=1 nbitems=1
+    local cmd id menus choice errcode highlight=1 nbitems=1 i=0
     local fend fbegin floop            # check functions
     local options=() functions=() datas=()  # menu datas
     local keymenu="${1:-MM}"
-    local typemenu="${2:-number}"
+    local typemenu="${2:-number}" dialtype="menu"
 
     local ext="${keymenu##*.}"
     local keymenuTxt="${keymenu%%.*}"
 
     case "$ext" in
-      lst) typemenu="list" ;;
-      *)   typemenu="number" ;
+      lst)  typemenu="list" ;;
+      clst) typemenu="checklist"; dialtype="checklist" ;;
+      *)    typemenu="number" ;
     esac
     unset ext
 
@@ -254,7 +273,7 @@ show_menu()
     ((nbitems>20)) && nbitems=20 # show max 20 items
 
     while ((1)); do
-        cmd=(dialog_menu "$(tt ${keymenuTxt} Title)" --default-item ${highlight} --menu "$(tt ${keymenuTxt} Body)" 0 0 )
+        cmd=(dialog_menu "$(tt ${keymenuTxt} Title)" --default-item ${highlight} "--${dialtype}" "$(tt ${keymenuTxt} Body)" 0 0 )
         cmd+=( $nbitems ) # add number of items
 
         # run dialog options
@@ -268,16 +287,26 @@ show_menu()
             *)  
                 debug "\nchoice: $choice"               # debug
                 [ -z "$choice" ] && continue
-
-                if [[ "$typemenu" == "number" ]]; then
-                    ((id=--choice))
-                else
-                    echo "choice: $choice"
-                    id=$(menu_item_find_list "$choice")
-                    echo "id: $id"
-                    choice="${datas[((id*2))]}"
-                    echo "choice: $choice"
-                fi
+                case "$typemenu" in
+                    list)
+                        debug "choice: \"$choice\""
+                        id=$(menu_item_find_list "$choice")
+                        debug "id: $id"
+                        choice="${datas[((id*2))]}"
+                        debug "choice: \"$choice\""
+                        ;;
+                    checklist)
+                        choice=( ${choice[@]} )
+                        for id in "${choice[@]}"; do
+                            ((id=id-1))
+                            debug "id: $id"
+                            fn="${functions[$id]}"
+                            ${fn} "$id"
+                        done
+                        return 0
+                        ;;
+                    *) ((id=--choice))
+                esac
                 fn="${functions[$id]}"      # find attach working function to array with  3 column
                 debug "call function: $fn"
                 # or use eval for eval ${fn} if variables $var ? not secure ?

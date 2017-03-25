@@ -13,20 +13,18 @@
 ------lvm                 ; workfunction
 ------mount               ; mount_disk_and_root
 ------end test block            ; check_menu_is_mounted 98
-----InstBs                   ; check_menu_is_mounted ; func_end
-------Mirrorlisting
-------refresh keys
-------InstBse
-------bootloader
-------done                ; mnu_return 97
-----ConfBse                   ; check_menu_is_mounted
-------fstab
-------hostname
-------locale
-------time and date
-------root_pw
-------create user
-------mkinitcpio
+----Sofwares
+------Editors.clst              ; check_soft_list
+--------+Visual Studio Code ; add_list code
+--------Kate               ; add_list kate
+--------Pluma              ; add_list pluma
+--------Nano (console)     ; add_list nano
+--------Vim                ; add_list vim
+------office.clst
+--------+steel      ; add_list openoffice-steel
+--------plus        ; add_list openoffice-plus
+------View list ; less ../.checklist
+------Clear list ; rm ../.checklist
 ----install_environment         ; check_menu_is_mounted
 ------DE_WM
 --------InstCom
